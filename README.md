@@ -36,18 +36,39 @@ The platform consists of the following components:
 ### Visual Architecture (Mermaid)
 
 ```mermaid
-graph TD
-  UI[Multi-Chain UI (React/Web3)] --> API[Backend API (Node.js/Express)]
-  API --> Vault[Cross-Chain Vault System (Solidity)]
-  API --> Engine[Perpetual Trading Engine (Solidity)]
-  Vault --> CCIP[CCIP Messaging Router (Chainlink CCIP)]
-  Engine --> CCIP
-  CCIP --> Dest[Destination Chain Contracts]
-  Engine --> Oracle[Oracles (Chainlink Data Streams)]
-  Engine --> Keeper[Automation (Chainlink Keepers)]
-  Oracle -->|Real-Time Price| Engine
-  Keeper -->|Auto-Liquidation| Engine
+flowchart LR
+  subgraph User Side
+    UI[Multi-Chain UI (React/Web3)]
+    Wallet[Wallet Connection (MetaMask, WalletConnect)]
+    LP[Liquidity Provider (LP)]
+    LU[Leverage User (Trader)]
+  end
+
+  subgraph Chain A
+    Vault[CrossChainVault.sol]
+  end
+
+  subgraph Chain B
+    Trading[PerpetualTrading.sol]
+    Position[PositionManager.sol]
+    Liquidator[LiquidationEngine.sol]
+    Oracle[DataStreamOracle.sol]
+    Keeper[Chainlink Keepers]
+  end
+
+  LP --> Vault
+  LU --> UI --> Wallet
+  Wallet --> Vault
+  Vault -- via CCIP --> Trading
+  Trading --> Position
+  Oracle --> Trading
+  Position --> Keeper
+  Keeper --> Liquidator --> Vault
+  Trading --> UI
+  Position --> UI
+  Vault --> LP
 ```
+
 
 ### Flow Diagram
 - [External Flow Diagram (Eraser)](https://app.eraser.io/workspace/UEKwgkPRaL8QMgGhBDXp)
