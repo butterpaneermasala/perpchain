@@ -37,37 +37,45 @@ The platform consists of the following components:
 
 ```mermaid
 flowchart LR
-  subgraph User Side
-    UI[Multi-Chain UI (React/Web3)]
-    Wallet[Wallet Connection (MetaMask, WalletConnect)]
-    LP[Liquidity Provider (LP)]
-    LU[Leverage User (Trader)]
-  end
+    %% User Section
+    UI["Multi-Chain UI (React/Web3)"]
+    Wallet["Wallet Connection"]
+    LP["Liquidity Provider"]
+    Trader["Trader"]
 
-  subgraph Chain A
-    Vault[CrossChainVault.sol]
-  end
+    %% Chain A - Vault
+    subgraph ChainA["Chain A - Vault"]
+        Vault["CrossChainVault.sol"]
+    end
 
-  subgraph Chain B
-    Trading[PerpetualTrading.sol]
-    Position[PositionManager.sol]
-    Liquidator[LiquidationEngine.sol]
-    Oracle[DataStreamOracle.sol]
-    Keeper[Chainlink Keepers]
-  end
+    %% Chain B - Trading Logic
+    subgraph ChainB["Chain B - Trading"]
+        Trading["PerpetualTrading.sol"]
+        PositionManager["PositionManager.sol"]
+        Liquidation["LiquidationEngine.sol"]
+        Oracle["Chainlink Data Streams"]
+        Keeper["Chainlink Automation (Keepers)"]
+    end
 
-  LP --> Vault
-  LU --> UI --> Wallet
-  Wallet --> Vault
-  Vault -- via CCIP --> Trading
-  Trading --> Position
-  Oracle --> Trading
-  Position --> Keeper
-  Keeper --> Liquidator --> Vault
-  Trading --> UI
-  Position --> UI
-  Vault --> LP
+    %% Flow Connections
+    LP --> Vault
+    Trader --> UI
+    UI --> Wallet
+    Wallet --> UI
+    UI --> Trading
+
+    Vault -- "via CCIP" --> Trading
+    Trading --> PositionManager
+    PositionManager --> Liquidation
+    Oracle --> Trading
+    Keeper --> Liquidation
+    Liquidation --> Vault
+    Vault --> LP
+
+    PositionManager --> UI
+    Trading --> UI
 ```
+
 
 
 ### Flow Diagram
