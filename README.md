@@ -2,32 +2,56 @@
 
 ## Overview
 
-PerpChain is a decentralized, cross-chain perpetual trading platform. It enables users to trade perpetual contracts across multiple blockchains, leveraging interoperability and decentralized finance (DeFi) principles. The platform is designed for high performance, security, and seamless user experience, allowing traders to access liquidity and trading opportunities beyond a single blockchain ecosystem.
+PerpChain is a decentralized, cross-chain perpetual trading platform that enables users to trade perpetual contracts across multiple blockchains. It solves liquidity fragmentation in DeFi by leveraging Chainlink's CCIP, Data Streams, and Automation. The platform is designed for high performance, security, and seamless user experience, allowing traders to access liquidity and trading opportunities beyond a single blockchain ecosystem.
 
 ## Key Features
 
 - **Cross-Chain Trading:** Trade perpetual contracts across multiple blockchain networks.
-- **Decentralized Architecture:** No central authority; all trades and settlements are handled by smart contracts.
-- **High Performance:** Optimized for low latency and high throughput.
-- **Secure and Transparent:** All transactions are verifiable on-chain.
+- **Unified Liquidity:** Aggregates liquidity from different chains for efficient trading.
+- **Decentralized Architecture:** All trades and settlements are handled by smart contracts.
+- **Real-Time Oracles:** Uses Chainlink Data Streams for accurate, up-to-date pricing.
+- **Automated Risk Management:** Chainlink Automation (Keepers) for liquidations and system health.
+- **User-Friendly Interface:** Multi-chain frontend for seamless trading and portfolio management.
+
+## How It Works
+
+1. Users connect their wallet and deposit collateral on any supported chain.
+2. Collateral is managed by a cross-chain vault system using Chainlink CCIP.
+3. Users open long/short perpetual positions, which are managed by the trading engine.
+4. Real-time prices are fetched from Chainlink Data Streams.
+5. The system continuously monitors positions; risky positions are liquidated automatically.
+6. Users can close positions and withdraw funds across chains.
 
 ## Architecture
 
-The platform architecture consists of the following key components:
+The platform consists of the following components:
+- **Multi-Chain UI:** React-based frontend for trading and portfolio management.
+- **Backend API:** Node.js/Express backend for business logic and integration.
+- **Cross-Chain Vault System:** Solidity contracts for asset management across chains.
+- **Perpetual Trading Engine:** Solidity contracts for order matching, margin, and leverage.
+- **CCIP Messaging Router:** Chainlink CCIP for cross-chain messaging and asset transfer.
+- **Oracles:** Chainlink Data Streams for real-time price feeds.
+- **Automation:** Chainlink Keepers for automated liquidations and system tasks.
 
-- **User Interface (UI):** A web-based frontend for traders to interact with the platform, view markets, and manage positions.
-- **Smart Contracts:** Core logic for perpetual trading, margin management, liquidation, and settlement, deployed on multiple blockchains.
-- **Cross-Chain Communication Layer:** Facilitates secure and efficient message passing and asset transfers between different blockchains.
-- **Oracles:** Provide real-time price feeds and other external data required for contract settlement and risk management.
-- **Liquidity Providers:** Supply liquidity to the platform, enabling efficient trade execution and minimizing slippage.
+### Visual Architecture (Mermaid)
 
-### High-Level Flow
+```mermaid
+graph TD
+  UI[Multi-Chain UI (React/Web3)] --> API[Backend API (Node.js/Express)]
+  API --> Vault[Cross-Chain Vault System (Solidity)]
+  API --> Engine[Perpetual Trading Engine (Solidity)]
+  Vault --> CCIP[CCIP Messaging Router (Chainlink CCIP)]
+  Engine --> CCIP
+  CCIP --> Dest[Destination Chain Contracts]
+  Engine --> Oracle[Oracles (Chainlink Data Streams)]
+  Engine --> Keeper[Automation (Chainlink Keepers)]
+  Oracle -->|Real-Time Price| Engine
+  Keeper -->|Auto-Liquidation| Engine
+```
 
-1. **User connects wallet** and selects a trading pair.
-2. **Order is placed** via the UI, which interacts with the smart contracts on the relevant blockchain.
-3. **Cross-chain communication** is triggered if the trade involves assets or contracts on different chains.
-4. **Oracles update prices** and provide data for margin and liquidation calculations.
-5. **Smart contracts handle settlement** and update user balances accordingly.
+### Flow Diagram
+- [External Flow Diagram (Eraser)](https://app.eraser.io/workspace/UEKwgkPRaL8QMgGhBDXp)
+- See also: `docs/flow_diagram.txt`
 
 ## Documentation
 
