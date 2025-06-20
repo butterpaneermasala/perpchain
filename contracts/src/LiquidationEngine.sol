@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 interface IPositionManager {
     struct Position {
@@ -72,8 +71,6 @@ contract LiquidationEngine is
     ReentrancyGuard,
     Pausable
 {
-    using SafeMath for uint256;
-
     // State Variables
     IPositionManager public positionManager;
     IDataStreamOracle public oracle;
@@ -142,7 +139,7 @@ contract LiquidationEngine is
         address _oracle,
         address _vault,
         address _feeRecipient
-    ) {
+    ) Ownable(msg.sender) {
         positionManager = IPositionManager(_positionManager);
         oracle = IDataStreamOracle(_oracle);
         vault = ICrossChainVault(_vault);
@@ -266,13 +263,8 @@ contract LiquidationEngine is
         uint256 liquidationReward = _calculateLiquidationReward(
             position.collateral
         );
-        uint256 platformFee = position.collateral.mul(liquidationFee).div(
-            10000
-        );
-        uint256 remainingCollateral = position
-            .collateral
-            .sub(liquidationReward)
-            .sub(platformFee);
+        uint256 platformFee = position.collateral * liquidationFee / 10000;
+        uint256 remainingCollateral = position.collateral - liquidationReward - platformFee;
 
         // Update position PnL before liquidation
         int256 pnl = _calculatePnL(position, currentPrice);
@@ -290,9 +282,7 @@ contract LiquidationEngine is
 
         // Distribute rewards
         if (liquidator != address(this)) {
-            liquidatorRewards[liquidator] = liquidatorRewards[liquidator].add(
-                liquidationReward
-            );
+            liquidatorRewards[liquidator] = liquidatorRewards[liquidator] + liquidationReward;
         }
 
         // Remove from queue if present
@@ -346,19 +336,12 @@ contract LiquidationEngine is
         if (position.isLong) {
             return
                 int256(
-                    currentPrice
-                        .sub(position.entryPrice)
-                        .mul(position.size)
-                        .div(position.entryPrice)
+                    currentPrice * position.size / position.entryPrice
                 );
         } else {
             return
                 int256(
-                    position
-                        .entryPrice
-                        .sub(currentPrice)
-                        .mul(position.size)
-                        .div(position.entryPrice)
+                    position.entryPrice * position.size / currentPrice
                 );
         }
     }
@@ -370,11 +353,11 @@ contract LiquidationEngine is
         IPositionManager.Position memory position,
         int256 pnl
     ) internal pure returns (uint256) {
-        int256 adjustedCollateral = int256(position.collateral).add(pnl);
+        int256 adjustedCollateral = int256(position.collateral) + pnl;
 
         if (adjustedCollateral <= 0) return 0;
 
-        return uint256(adjustedCollateral).mul(10000).div(position.size);
+        return uint256(adjustedCollateral) * 10000 / position.size;
     }
 
     /**
@@ -383,7 +366,7 @@ contract LiquidationEngine is
     function _calculateLiquidationReward(
         uint256 collateral
     ) internal pure returns (uint256) {
-        uint256 reward = collateral.mul(LIQUIDATION_REWARD).div(10000);
+        uint256 reward = collateral * LIQUIDATION_REWARD / 10000;
 
         if (reward < MIN_LIQUIDATION_REWARD) {
             reward = MIN_LIQUIDATION_REWARD;
@@ -542,7 +525,7 @@ contract LiquidationEngine is
     function emergencyWithdraw(
         address token,
         uint256 amount
-    ) external onlyOwner {
+    ) external view onlyOwner {
         require(emergencyMode, "Not in emergency mode");
         // Implementation for emergency token withdrawal
     }

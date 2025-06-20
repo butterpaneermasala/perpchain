@@ -2,13 +2,18 @@
 pragma solidity ^0.8.19;
 
 // Importing security and utility contracts from OpenZeppelin and Chainlink
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; // Prevents reentrancy attacks
-import "@openzeppelin/contracts/security/Pausable.sol"; // Allows contract to be paused/unpaused
-import "@openzeppelin/contracts/access/Ownable.sol"; // Provides access control (onlyOwner)
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol"; // Interface for ERC20 tokens
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"; // Safe ERC20 operations
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol"; // Chainlink price feeds
-import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol"; // Chainlink automation for upkeeps
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol"; // Prevents reentrancy attacks
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol"; // Allows contract to be paused/unpaused
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol"; // Provides access control (onlyOwner)
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol"; // Interface for ERC20 tokens
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"; // Safe ERC20 operations
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+
+// IDataStreamOracle interface (copied from LiquidationEngine)
+interface IDataStreamOracle {
+    function getLatestPrice(bytes32 feedId) external view returns (uint256 price, uint256 timestamp);
+    function getPriceWithValidation(bytes32 feedId) external view returns (uint256 price, bool isValid);
+}
 
 /**
  * @title PerpetualTrading
@@ -30,6 +35,7 @@ contract PerpetualTrading is
     uint256 public constant LIQUIDATION_PENALTY = 5; // Penalty for liquidation (5%)
     uint256 public constant TRADING_FEE = 100; // Trading fee (0.1% in basis points)
     uint256 public constant BASIS_POINTS = 100000; // 100,000 basis points = 100%
+    uint256 public constant STALENESS_THRESHOLD = 300; // 5 minutes
 
     // Enum for position type: LONG or SHORT
     enum PositionType {
@@ -62,7 +68,6 @@ contract PerpetualTrading is
     // Struct to store market data for each asset pair
     struct MarketData {
         bytes32 assetPair; // Asset pair identifier
-        AggregatorV3Interface priceFeed; // Chainlink price feed for the asset
         uint256 maxLeverage; // Max leverage for this market
         uint256 maintenanceMargin; // Maintenance margin in basis points
         bool isActive; // Whether the market is active
@@ -90,12 +95,17 @@ contract PerpetualTrading is
     address public liquidationBot; // Address allowed to perform liquidations
 
     // Supported collateral tokens and their price feeds
-    mapping(address => bool) public supportedTokens; // Which tokens are allowed as collateral
-    mapping(address => AggregatorV3Interface) public tokenPriceFeeds; // Price feeds for collateral tokens
+    mapping(address => bool) public supportedTokens;
+    // Asset/collateral to feedId mapping
+    mapping(bytes32 => bytes32) public assetPairToFeedId; // assetPair => feedId
+    mapping(address => bytes32) public tokenToFeedId; // token => feedId
 
     // Cross-chain related variables
     address public ccipReceiver; // Address for cross-chain messages
     mapping(uint256 => bool) public crossChainPositions; // Tracks cross-chain positions
+
+    // Oracle reference
+    IDataStreamOracle public oracle;
 
     // Events to log important actions
     event PositionOpened(
@@ -158,22 +168,23 @@ contract PerpetualTrading is
         _;
     }
 
-    // Constructor sets the fee recipient and initial liquidation bot
-    constructor(address _feeRecipient) {
+    // Constructor sets the fee recipient, initial liquidation bot, and oracle
+    constructor(address _feeRecipient, address _oracle) Ownable(msg.sender) {
         feeRecipient = _feeRecipient;
-        liquidationBot = msg.sender; // Deployer is initial liquidation bot
+        liquidationBot = msg.sender;
+        oracle = IDataStreamOracle(_oracle);
     }
 
     /**
      * @dev Add a new trading market (only owner)
      * @param assetPair The asset pair (e.g., "BTC/USD")
-     * @param priceFeed The Chainlink price feed address
+     * @param feedId The Chainlink price feed ID
      * @param maxLeverage Maximum leverage for this market
      * @param maintenanceMargin Maintenance margin in basis points
      */
     function addMarket(
         bytes32 assetPair,
-        address priceFeed,
+        bytes32 feedId,
         uint256 maxLeverage,
         uint256 maintenanceMargin
     ) external onlyOwner {
@@ -185,12 +196,11 @@ contract PerpetualTrading is
         // Store market data
         markets[assetPair] = MarketData({
             assetPair: assetPair,
-            priceFeed: AggregatorV3Interface(priceFeed),
             maxLeverage: maxLeverage,
             maintenanceMargin: maintenanceMargin,
             isActive: true
         });
-
+        assetPairToFeedId[assetPair] = feedId;
         // Initialize funding rate for this market
         fundingRates[assetPair] = FundingRate({
             assetPair: assetPair,
@@ -202,14 +212,14 @@ contract PerpetualTrading is
     /**
      * @dev Add a supported collateral token (only owner)
      * @param token The ERC20 token address
-     * @param priceFeed The Chainlink price feed for the token
+     * @param feedId The Chainlink price feed ID
      */
     function addSupportedToken(
         address token,
-        address priceFeed
+        bytes32 feedId
     ) external onlyOwner {
-        supportedTokens[token] = true; // Mark token as supported
-        tokenPriceFeeds[token] = AggregatorV3Interface(priceFeed); // Store price feed
+        supportedTokens[token] = true;
+        tokenToFeedId[token] = feedId;
     }
 
     /**
@@ -522,10 +532,12 @@ contract PerpetualTrading is
      * @return price The latest price (scaled to PRECISION)
      */
     function _getAssetPrice(bytes32 assetPair) internal view returns (uint256) {
-        AggregatorV3Interface priceFeed = markets[assetPair].priceFeed;
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        bytes32 feedId = assetPairToFeedId[assetPair];
+        require(feedId != 0, "No feed for asset pair");
+        (uint256 price, uint256 timestamp) = oracle.getLatestPrice(feedId);
         require(price > 0, "Invalid price");
-        return (uint256(price) * PRECISION) / (10 ** priceFeed.decimals());
+        require(block.timestamp - timestamp < STALENESS_THRESHOLD, "Stale price");
+        return price;
     }
 
     /**
@@ -540,13 +552,12 @@ contract PerpetualTrading is
     ) internal view returns (uint256) {
         uint256 balance = userCollateral[user][token];
         if (balance == 0) return 0;
-        AggregatorV3Interface priceFeed = tokenPriceFeeds[token];
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        bytes32 feedId = tokenToFeedId[token];
+        require(feedId != 0, "No feed for token");
+        (uint256 price, uint256 timestamp) = oracle.getLatestPrice(feedId);
         require(price > 0, "Invalid token price");
-
-        uint256 tokenPrice = (uint256(price) * PRECISION) /
-            (10 ** priceFeed.decimals());
-        return (balance * tokenPrice) / PRECISION;
+        require(block.timestamp - timestamp < STALENESS_THRESHOLD, "Stale price");
+        return (balance * price) / PRECISION;
     }
 
     /**
@@ -559,13 +570,12 @@ contract PerpetualTrading is
         uint256 usdAmount,
         address token
     ) internal view returns (uint256) {
-        AggregatorV3Interface priceFeed = tokenPriceFeeds[token];
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        bytes32 feedId = tokenToFeedId[token];
+        require(feedId != 0, "No feed for token");
+        (uint256 price, uint256 timestamp) = oracle.getLatestPrice(feedId);
         require(price > 0, "Invalid token price");
-
-        uint256 tokenPrice = (uint256(price) * PRECISION) /
-            (10 ** priceFeed.decimals());
-        return (usdAmount * PRECISION) / tokenPrice;
+        require(block.timestamp - timestamp < STALENESS_THRESHOLD, "Stale price");
+        return (usdAmount * PRECISION) / price;
     }
 
     /**
@@ -704,14 +714,12 @@ contract PerpetualTrading is
         address token
     ) internal view returns (uint256) {
         if (amount == 0) return 0;
-
-        AggregatorV3Interface priceFeed = tokenPriceFeeds[token];
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        bytes32 feedId = tokenToFeedId[token];
+        require(feedId != 0, "No feed for token");
+        (uint256 price, uint256 timestamp) = oracle.getLatestPrice(feedId);
         require(price > 0, "Invalid token price");
-
-        uint256 tokenPrice = (uint256(price) * PRECISION) /
-            (10 ** priceFeed.decimals());
-        return (amount * tokenPrice) / PRECISION;
+        require(block.timestamp - timestamp < STALENESS_THRESHOLD, "Stale price");
+        return (amount * price) / PRECISION;
     }
 
     /**
@@ -806,6 +814,15 @@ contract PerpetualTrading is
      */
     function setFeeRecipient(address _feeRecipient) external onlyOwner {
         feeRecipient = _feeRecipient;
+    }
+
+    /**
+     * @dev Set the oracle address (only owner)
+     * @param _oracle The new oracle address
+     */
+    function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Invalid oracle address");
+        oracle = IDataStreamOracle(_oracle);
     }
 
     /**

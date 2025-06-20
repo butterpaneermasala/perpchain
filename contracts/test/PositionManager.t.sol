@@ -15,17 +15,25 @@ contract PositionManagerTest is Test {
 
     function testOpenPosition() public {
         vm.startPrank(trader);
-        uint256 posId = manager.openPosition(asset, 1000 ether, 2000 ether, 200 ether, 10, true);
+        uint256 size = 1000 ether;
+        uint256 entryPrice = 2000 ether;
+        uint256 leverage = 10;
+        uint256 requiredMargin = (size * entryPrice) / leverage;
+        uint256 posId = manager.openPosition(asset, size, entryPrice, requiredMargin, leverage, true);
         (PositionManager.Position memory pos) = manager.getPosition(posId);
         assertEq(pos.trader, trader);
-        assertEq(pos.size, 1000 ether);
+        assertEq(pos.size, size);
         assertEq(pos.isLong, true);
         vm.stopPrank();
     }
 
     function testClosePosition() public {
         vm.startPrank(trader);
-        uint256 posId = manager.openPosition(asset, 1000 ether, 2000 ether, 200 ether, 10, true);
+        uint256 size = 1000 ether;
+        uint256 entryPrice = 2000 ether;
+        uint256 leverage = 10;
+        uint256 requiredMargin = (size * entryPrice) / leverage;
+        uint256 posId = manager.openPosition(asset, size, entryPrice, requiredMargin, leverage, true);
         manager.closePosition(posId, 2100 ether);
         (PositionManager.Position memory pos) = manager.getPosition(posId);
         assertEq(pos.isOpen, false);
@@ -34,13 +42,17 @@ contract PositionManagerTest is Test {
 
     function testAddRemoveMargin() public {
         vm.startPrank(trader);
-        uint256 posId = manager.openPosition(asset, 1000 ether, 2000 ether, 200 ether, 10, true);
+        uint256 size = 1000 ether;
+        uint256 entryPrice = 2000 ether;
+        uint256 leverage = 10;
+        uint256 requiredMargin = (size * entryPrice) / leverage;
+        uint256 posId = manager.openPosition(asset, size, entryPrice, requiredMargin, leverage, true);
         manager.addMargin(posId, 50 ether);
         (PositionManager.Position memory pos) = manager.getPosition(posId);
-        assertEq(pos.margin, 250 ether);
+        assertEq(pos.margin, requiredMargin + 50 ether);
         manager.removeMargin(posId, 50 ether);
         (PositionManager.Position memory pos2) = manager.getPosition(posId);
-        assertEq(pos2.margin, 200 ether);
+        assertEq(pos2.margin, requiredMargin);
         vm.stopPrank();
     }
 }
