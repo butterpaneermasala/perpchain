@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import ContractPage from './components/ContractPage';
 import Dashboard from './components/Dashboard';
 import TradingInterface from './components/TradingInterface';
+import LendingInterface from './components/LendingInterface';
 import { UserGuide } from './components/UserGuide';
 import { loadContractAddresses } from './utils/contracts';
 import './index.css';
@@ -22,6 +23,7 @@ const CONTRACTS = [
   'PerpetualTrading',
   'LiquidationEngine',
   'CrossChainReceiver',
+  'CrossChainLendingPool',
 ];
 
 // Main App Component (the trading interface)
@@ -42,19 +44,19 @@ function MainApp() {
       return <TradingInterface />;
     }
 
+    if (selected === 'Lending') {
+      return <LendingInterface />;
+    }
+
     if (selected === 'Guide') {
       return <UserGuide />;
     }
     
-    if (addresses[selected]) {
-      return <ContractPage name={selected} address={addresses[selected]} />;
+    if (CONTRACTS.includes(selected)) {
+      return <ContractPage name={selected} address={addresses[selected] || ''} />;
     }
     
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-2xl font-bold text-[#666]">Loading contract info...</div>
-      </div>
-    );
+    return null;
   };
 
   return (

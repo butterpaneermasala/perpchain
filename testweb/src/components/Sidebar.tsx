@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { BarChart3, Home, Settings, Zap, BookOpen } from 'lucide-react';
+import { BarChart3, Home, Settings, Zap, BookOpen, Wallet } from 'lucide-react';
 
 interface SidebarProps {
   selected: string;
@@ -12,6 +11,7 @@ export default function Sidebar({ selected, onSelect, contracts }: SidebarProps)
   const mainItems = [
     { id: 'Dashboard', label: 'Dashboard', icon: Home },
     { id: 'Trading', label: 'Trading', icon: BarChart3 },
+    { id: 'Lending', label: 'Lending', icon: Wallet },
     { id: 'Guide', label: 'User Guide', icon: BookOpen },
   ];
 

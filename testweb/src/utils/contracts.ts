@@ -1,4 +1,3 @@
-
 // Utility to load contract ABIs and addresses
 import { ContractInterface } from 'ethers';
 
@@ -16,6 +15,7 @@ const contractAbiFiles: Record<string, string> = {
   PerpetualTrading: 'PerpetualTrading.json',
   LiquidationEngine: 'LiquidationEngine.json',
   CrossChainReceiver: 'CrossChainReceiver.json',
+  CrossChainLendingPool: 'CrossChainLendingPool.json',
   // Add more as needed
 };
 
