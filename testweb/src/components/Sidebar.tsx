@@ -1,46 +1,80 @@
+
 import React from 'react';
+import { BarChart3, Home, Settings, Zap, BookOpen } from 'lucide-react';
 
-const CONTRACTS = [
-  'DataStreamOracle',
-  'CrossChainVault',
-  'PositionManager',
-  'PerpetualTrading',
-  'LiquidationEngine',
-  'CrossChainReceiver',
-];
+interface SidebarProps {
+  selected: string;
+  onSelect: (name: string) => void;
+  contracts: string[];
+}
 
-export default function Sidebar({ selected, onSelect }: { selected: string, onSelect: (name: string) => void }) {
+export default function Sidebar({ selected, onSelect, contracts }: SidebarProps) {
+  const mainItems = [
+    { id: 'Dashboard', label: 'Dashboard', icon: Home },
+    { id: 'Trading', label: 'Trading', icon: BarChart3 },
+    { id: 'Guide', label: 'User Guide', icon: BookOpen },
+  ];
+
   return (
-    <nav style={{ width: 220, background: '#232946', color: '#fff', padding: 32, display: 'flex', flexDirection: 'column', gap: 24, minHeight: '100vh', zIndex: 2 }}>
-      <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 32, letterSpacing: -2 }}>PerpChain</div>
-      <h2 style={{ fontSize: 20, margin: '16px 0 8px 0' }}>Contracts</h2>
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {CONTRACTS.map(name => (
-          <li key={name} style={{ marginBottom: 8 }}>
+    <nav className="w-80 bg-[#232946] text-white p-8 flex flex-col gap-6 min-h-screen border-r-8 border-[#43d9ad] relative">
+      {/* Logo */}
+      <div className="mb-8">
+        <div className="text-4xl font-black mb-2 tracking-tight flex items-center gap-3">
+          <Zap className="h-10 w-10 text-[#43d9ad]" />
+          PerpChain
+        </div>
+        <div className="text-[#43d9ad] font-bold text-sm">Cross-Chain Perpetuals</div>
+      </div>
+      
+      {/* Main Navigation */}
+      <div className="space-y-2">
+        {mainItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            className={`w-full flex items-center gap-4 p-4 rounded-lg border-4 font-bold text-lg transition-all ${
+              selected === item.id
+                ? 'bg-[#43d9ad] text-[#232946] border-[#43d9ad] shadow-[4px_4px_0px_0px_#3b82f6]'
+                : 'bg-transparent text-white border-transparent hover:bg-[#43d9ad] hover:text-[#232946] hover:border-[#43d9ad] hover:shadow-[4px_4px_0px_0px_#3b82f6]'
+            }`}
+          >
+            <item.icon className="h-6 w-6" />
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Contracts Section */}
+      <div className="mt-8">
+        <h2 className="text-[#43d9ad] font-black text-lg mb-4 flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          Smart Contracts
+        </h2>
+        <div className="space-y-2">
+          {contracts.map(name => (
             <button
+              key={name}
               onClick={() => onSelect(name)}
-              style={{
-                background: selected === name ? '#eebbc3' : 'transparent',
-                color: selected === name ? '#232946' : '#fff',
-                border: 'none',
-                borderRadius: 8,
-                padding: '0.7em 1.1em',
-                fontWeight: 700,
-                fontSize: 16,
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%',
-              }}
+              className={`w-full text-left p-3 rounded-lg border-2 font-bold transition-all ${
+                selected === name
+                  ? 'bg-[#43d9ad] text-[#232946] border-[#43d9ad] shadow-[2px_2px_0px_0px_#3b82f6]'
+                  : 'bg-transparent text-white border-transparent hover:bg-[#43d9ad] hover:text-[#232946] hover:border-[#43d9ad] hover:shadow-[2px_2px_0px_0px_#3b82f6]'
+              }`}
             >
               {name}
             </button>
-          </li>
-        ))}
-      </ul>
-      <div style={{ marginTop: 32, background: '#eebbc3', color: '#232946', borderRadius: 12, padding: 16 }}>
-        <h3 style={{ fontSize: 16, margin: '0 0 8px 0' }}>Guide</h3>
-        <p style={{ fontSize: 14, margin: 0 }}>
-          Select a contract to interact with. Each page provides a simple UI and a guide to help you understand and use the contract.
+          ))}
+        </div>
+      </div>
+
+      {/* Info Box */}
+      <div className="mt-auto p-6 bg-[#43d9ad] text-[#232946] border-4 border-[#3b82f6] rounded-lg shadow-[4px_4px_0px_0px_#3b82f6]">
+        <h3 className="font-black text-lg mb-3">🚀 Quick Start</h3>
+        <p className="font-bold text-sm leading-relaxed">
+          • Check the User Guide for tutorials<br />
+          • Connect wallet to start trading<br />
+          • Deposit collateral before opening positions<br />
+          • Start with low leverage (5x-10x)
         </p>
       </div>
     </nav>
