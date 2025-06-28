@@ -1,5 +1,5 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { Web3Provider } from './contexts/Web3Context';
 import Sidebar from './components/Sidebar';
@@ -10,6 +10,10 @@ import { UserGuide } from './components/UserGuide';
 import { loadContractAddresses } from './utils/contracts';
 import './index.css';
 import './styles/neobrutalism.css';
+import './landing.css';
+
+// Import the landing page
+import LandingPage from './landing/pages/Home';
 
 const CONTRACTS = [
   'DataStreamOracle',
@@ -20,8 +24,9 @@ const CONTRACTS = [
   'CrossChainReceiver',
 ];
 
-function App() {
-  const [selected, setSelected] = useState('Dashboard');
+// Main App Component (the trading interface)
+function MainApp() {
+  const [selected, setSelected] = React.useState('Dashboard');
   const [addresses, setAddresses] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
@@ -76,6 +81,24 @@ function App() {
         />
       </div>
     </Web3Provider>
+  );
+}
+
+// Root App Component with Routing
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Landing page as the default route */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Main app route */}
+        <Route path="/app" element={<MainApp />} />
+        
+        {/* Redirect any unknown routes to landing page */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
 
