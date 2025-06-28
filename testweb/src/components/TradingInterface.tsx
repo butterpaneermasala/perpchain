@@ -146,17 +146,17 @@ export default function TradingInterface() {
       <div className="mb-6">
         <Card className="border-4 border-[#232946] shadow-[4px_4px_0px_0px_#eebbc3]">
           <CardHeader className="bg-[#f0f0f0] border-b-4 border-[#232946]">
-            <CardTitle className="text-lg font-black">Smart Contract Status</CardTitle>
+            <CardTitle className="text-lg font-black text-[#232946]">Smart Contract Status</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${perpetualLoading ? 'bg-yellow-500' : perpetualContract ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="font-bold">Perpetual Trading</span>
+                <span className="font-bold text-[#232946]">Perpetual Trading</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${positionLoading ? 'bg-yellow-500' : positionContract ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="font-bold">Position Manager</span>
+                <span className="font-bold text-[#232946]">Position Manager</span>
               </div>
             </div>
           </CardContent>
@@ -166,9 +166,9 @@ export default function TradingInterface() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Trading Pairs */}
         <Card className="lg:col-span-2 border-4 border-[#232946] shadow-[8px_8px_0px_0px_#232946]">
-          <CardHeader className="bg-gradient-to-r from-[#43d9ad] to-[#3b82f6] text-white border-b-4 border-[#232946]">
-            <CardTitle className="text-2xl font-black">Market Overview</CardTitle>
-            <CardDescription className="text-white/90 font-bold">
+          <CardHeader className="bg-gradient-to-r from-[#43d9ad] to-[#3b82f6] border-b-4 border-[#232946]">
+            <CardTitle className="text-2xl font-black text-white">Market Overview</CardTitle>
+            <CardDescription className="text-white font-bold">
               Real-time prices and 24h changes
             </CardDescription>
           </CardHeader>
@@ -186,14 +186,14 @@ export default function TradingInterface() {
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="font-black text-lg">{pair.pair}</h3>
-                      <p className="font-bold text-2xl">{pair.price}</p>
+                      <h3 className="font-black text-lg text-[#232946]">{pair.pair}</h3>
+                      <p className="font-bold text-2xl text-[#232946]">{pair.price}</p>
                     </div>
                     <div className={`flex items-center gap-2 font-bold ${
                       pair.isUp ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {pair.isUp ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-                      {pair.change}
+                      <span className="text-[#232946]">{pair.change}</span>
                     </div>
                   </div>
                 </div>
@@ -206,8 +206,8 @@ export default function TradingInterface() {
         <div className="space-y-6">
           {/* Collateral Deposit */}
           <Card className="border-4 border-[#232946] shadow-[8px_8px_0px_0px_#232946]">
-            <CardHeader className="bg-[#eebbc3] text-[#232946] border-b-4 border-[#232946]">
-              <CardTitle className="text-lg font-black flex items-center gap-2">
+            <CardHeader className="bg-[#eebbc3] border-b-4 border-[#232946]">
+              <CardTitle className="text-lg font-black flex items-center gap-2 text-[#232946]">
                 <Zap className="h-5 w-5" />
                 Deposit Collateral
               </CardTitle>
@@ -235,19 +235,19 @@ export default function TradingInterface() {
 
           {/* Position Opening */}
           <Card className="border-4 border-[#232946] shadow-[8px_8px_0px_0px_#232946]">
-            <CardHeader className="bg-[#232946] text-white border-b-4 border-[#232946]">
-              <CardTitle className="text-xl font-black flex items-center gap-2">
+            <CardHeader className="bg-[#232946] border-b-4 border-[#232946]">
+              <CardTitle className="text-xl font-black flex items-center gap-2 text-white">
                 <DollarSign className="h-6 w-6" />
                 Open Position
               </CardTitle>
-              <CardDescription className="text-white/90 font-bold">
+              <CardDescription className="text-[#eebbc3] font-bold">
                 {selectedPair}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               {/* Position Type */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#232946]">Position Type</label>
+                <label className="text-sm font-bold text-[#eebbc3]">Position Type</label>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant={position === 'long' ? 'default' : 'outline'}
@@ -276,7 +276,7 @@ export default function TradingInterface() {
 
               {/* Leverage */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#232946]">Leverage</label>
+                <label className="text-sm font-bold text-[#eebbc3]">Leverage</label>
                 <Select value={leverage} onValueChange={setLeverage}>
                   <SelectTrigger className="border-4 border-[#232946] font-bold">
                     <SelectValue />
@@ -293,7 +293,7 @@ export default function TradingInterface() {
 
               {/* Amount */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#232946]">Position Size (USDC)</label>
+                <label className="text-sm font-bold text-[#eebbc3]">Position Size (USDC)</label>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -307,25 +307,10 @@ export default function TradingInterface() {
               <Button
                 onClick={openPosition}
                 disabled={executing || !amount || !positionContract}
-                className={`w-full font-bold text-lg py-6 border-4 border-[#232946] shadow-[4px_4px_0px_0px_#232946] hover:shadow-[2px_2px_0px_0px_#232946] transition-all ${
-                  position === 'long'
-                    ? 'bg-green-500 hover:bg-green-600 text-white'
-                    : 'bg-red-500 hover:bg-red-600 text-white'
-                }`}
+                className={`w-full bg-[#232946] hover:bg-[#1a1a2e] text-white border-4 border-[#eebbc3] font-bold shadow-[4px_4px_0px_0px_#eebbc3] hover:shadow-[2px_2px_0px_0px_#eebbc3] transition-all`}
               >
-                {executing ? 'Processing...' : `Open ${position.toUpperCase()} Position`}
+                {executing ? 'Opening Position...' : 'Open Position'}
               </Button>
-
-              {/* Risk Warning */}
-              <div className="bg-orange-100 border-4 border-orange-500 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
-                  <span className="font-bold text-orange-800">Risk Warning</span>
-                </div>
-                <p className="text-sm font-bold text-orange-800">
-                  Trading with leverage involves substantial risk. Never risk more than you can afford to lose.
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>

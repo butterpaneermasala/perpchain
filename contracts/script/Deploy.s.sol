@@ -27,6 +27,7 @@ contract DeployScript is Script {
         PositionManager manager = new PositionManager(address(oracle));
         console2.log("PositionManager deployed at:", address(manager));
         CrossChainLendingPool lendingPool = new CrossChainLendingPool(msg.sender);
+        console2.log("CrossChainLendingPool deployed at:", address(lendingPool));
         PerpetualTrading trading = new PerpetualTrading(msg.sender, address(oracle), address(lendingPool));
         console2.log("PerpetualTrading deployed at:", address(trading));
         LiquidationEngine engine = new LiquidationEngine(address(manager), address(oracle), address(vault), msg.sender);

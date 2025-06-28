@@ -11,7 +11,6 @@ export default function Sidebar({ selected, onSelect, contracts }: SidebarProps)
   const mainItems = [
     { id: 'Dashboard', label: 'Dashboard', icon: Home },
     { id: 'Trading', label: 'Trading', icon: BarChart3 },
-    { id: 'Lending', label: 'Lending', icon: Wallet },
     { id: 'Guide', label: 'User Guide', icon: BookOpen },
   ];
 

@@ -6,7 +6,6 @@ import Sidebar from './components/Sidebar';
 import ContractPage from './components/ContractPage';
 import Dashboard from './components/Dashboard';
 import TradingInterface from './components/TradingInterface';
-import LendingInterface from './components/LendingInterface';
 import { UserGuide } from './components/UserGuide';
 import { loadContractAddresses } from './utils/contracts';
 import './index.css';
@@ -42,10 +41,6 @@ function MainApp() {
     
     if (selected === 'Trading') {
       return <TradingInterface />;
-    }
-
-    if (selected === 'Lending') {
-      return <LendingInterface />;
     }
 
     if (selected === 'Guide') {
