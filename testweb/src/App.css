@@ -1,0 +1,225 @@
+/* Neobrutalism theme additions */
+:root {
+  --neo-bg: #f7f8fa;
+  --neo-card-bg: #fff;
+  --neo-primary: #232946;
+  --neo-accent: #eebbc3;
+  --neo-border: #232946;
+  --neo-shadow: 4px 4px 0 #232946;
+  --neo-radius: 18px;
+  --neo-font: 'Inter', 'IBM Plex Mono', 'Arial', sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f7f8fa;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+body, #root {
+  background: var(--neo-bg);
+  font-family: var(--neo-font);
+}
+
+.neo-sidebar {
+  width: 260px;
+  background: var(--neo-primary);
+  color: #fff;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-shadow: var(--neo-shadow);
+  border-radius: var(--neo-radius) 0 0 var(--neo-radius);
+}
+
+.neo-sidebar h2 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.neo-action-btn {
+  margin-bottom: 0.75rem;
+  background: var(--neo-primary);
+  color: #fff;
+  border: 3px solid var(--neo-border);
+  border-radius: var(--neo-radius);
+  padding: 0.7em 1.2em;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--neo-shadow);
+  transition: background 0.15s, color 0.15s;
+}
+.neo-action-btn.selected, .neo-action-btn:hover {
+  background: var(--neo-accent);
+  color: var(--neo-primary);
+}
+
+.neo-main {
+  flex: 1;
+  padding: 3rem 5vw;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.neo-card {
+  background: var(--neo-card-bg);
+  border: 3px solid var(--neo-border);
+  border-radius: var(--neo-radius);
+  box-shadow: var(--neo-shadow);
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.neo-dashboard-action {
+  background: var(--neo-bg);
+  border: 3px solid var(--neo-border);
+  border-radius: var(--neo-radius);
+  box-shadow: var(--neo-shadow);
+  padding: 1.5rem;
+  min-width: 220px;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.neo-btn {
+  background: var(--neo-primary);
+  color: #fff;
+  border: 3px solid var(--neo-border);
+  border-radius: var(--neo-radius);
+  padding: 0.7em 1.2em;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--neo-shadow);
+  font-size: 1.1em;
+  margin-top: 1em;
+  transition: background 0.15s, color 0.15s;
+}
+.neo-btn.alt, .neo-btn:hover {
+  background: var(--neo-accent);
+  color: var(--neo-primary);
+}
+
+.neo-input {
+  padding: 0.7em 1em;
+  border-radius: var(--neo-radius);
+  border: 3px solid var(--neo-border);
+  font-size: 1em;
+  margin-bottom: 0.5em;
+  width: 100%;
+  box-shadow: var(--neo-shadow);
+  background: #fff;
+}
+
+.neo-label {
+  font-weight: 700;
+  margin-bottom: 0.3em;
+  display: block;
+  color: var(--neo-primary);
+}
+
+.neo-result {
+  margin-top: 1em;
+  color: var(--neo-primary);
+  font-size: 1.1em;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.neo-tx-status {
+  margin: 1.2em 0;
+  font-weight: 700;
+  color: var(--neo-primary);
+}
+.neo-tx-status.error {
+  color: crimson;
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .neo-main { padding: 2rem 1rem; }
+  .neo-card { padding: 1.2rem; }
+  .neo-sidebar { padding: 1.2rem 0.7rem; }
+}
+
+/* Existing styles below... */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.App button {
+  padding: 0.75em 1.5em;
+  font-size: 1.1em;
+  border-radius: 8px;
+  border: none;
+  background: #646cff;
+  color: white;
+  cursor: pointer;
+  margin-top: 1.5em;
+  transition: background 0.2s;
+}
+.App button:hover {
+  background: #535bf2;
+}
+
+.App {
+  margin-top: 2em;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}

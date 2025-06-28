@@ -1,0 +1,24 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+# Dependencies
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@chainlink/=lib/chainlink-brownie-contracts/",
+]
+via_ir = true
+optimizer = true
+
+
+[fuzz]
+runs = 256 # Default number of fuzz runs (can be increased)
+# max_test_rejects = 256  # How many `vm.assume()` rejections before test is skipped
+
+[invariant]
+runs = 256            # Number of random sequences Foundry runs
+depth = 15            # Max number of calls per sequence (higher = deeper coverage)
+fail_on_revert = true # Fail if any call in the sequence reverts

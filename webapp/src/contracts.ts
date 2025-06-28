@@ -1,0 +1,8 @@
+export const CONTRACTS = {
+  mockERC20: '0x5b73C5498c1E3b4dbA84de0F1833c4a029d90519',
+  dataStreamOracle: '0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496',
+  crossChainVault: '0xA8452Ec99ce0C64f20701dB7dD3abDb607c00496',
+  positionManager: '0xBb2180ebd78ce97360503434eD37fcf4a1Df61c3',
+  perpetualTrading: '0xDB8cFf278adCCF9E9b5da745B44E754fC4EE3C76',
+  liquidationEngine: '0x50EEf481cae4250d252Ae577A09bF514f224C6C4',
+}; 

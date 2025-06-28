@@ -1,0 +1,46 @@
+        ┌────────────────────────────┐
+        │      Multi-Chain UI        │ ◄──── User trades/view portfolio
+        │ (React + Web3 + Ethers.js)│
+        └────────────┬──────────────┘
+                     │
+                     ▼
+        ┌────────────────────────────┐
+        │       Backend API          │ ◄──── Interacts with frontend
+        │   (Node.js + Express)      │
+        └────────────┬──────────────┘
+                     │
+         ┌───────────┴───────────┐
+         ▼                       ▼
+┌────────────────┐    ┌────────────────────┐
+│ Cross-Chain    │    │ Perpetual Trading  │
+│ Vault System   │    │ Engine             │
+│ (Solidity)     │    │ (Solidity)         │
+│                │    │  - Orders/Matching │
+│ - Asset Locking│    │  - Positions       │
+│ - Withdrawals  │    │  - Margin, Leverage│
+└────────────────┘    └────────────────────┘
+         │                       │
+         └────────┬─────────────┘
+                  ▼
+       ┌────────────────────────┐
+       │ CCIP Messaging Router  │ ◄── Cross-Chain Sync
+       │ (Chainlink CCIP)       │
+       └────────┬───────────────┘
+                ▼
+  ┌──────────────────────────────┐
+  │ Destination Chain Contracts  │
+  │ - Vault + Trading Mirrors    │
+  └──────────────────────────────┘
+
+                ▲
+                │
+       ┌────────┴──────────┐
+       ▼                   ▼
+┌────────────────┐   ┌────────────────────┐
+│ Oracle Price   │   │ Automation System  │
+│ Feeds (CL DS)  │   │ (Chainlink Keepers)│
+└────────────────┘   └────────────────────┘
+       │                         │
+       ▼                         ▼
+ Real-Time Price       Auto-Liquidation Alerts
+

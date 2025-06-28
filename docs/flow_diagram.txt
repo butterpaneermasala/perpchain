@@ -1,0 +1,21 @@
+[1] User opens dApp UI (multi-chain)
+      ↓
+[2] Connects wallet (e.g., Metamask, Suiet, etc.)
+      ↓
+[3] Deposits collateral (e.g., USDC) on Chain A
+      ↓
+[4] Collateral sent to Cross-Chain Vault via CCIP
+      ↓
+[5] Opens a Long/Short position on ETH (e.g., on Chain B)
+      ↓
+[6] Trading Engine processes order, manages margin
+      ↓
+[7] Real-time prices fetched from Chainlink Data Streams
+      ↓
+[8] Position monitored continuously for liquidation triggers
+      ↓
+[9] If risky, Chainlink Keepers trigger liquidation
+      ↓
+[10] User closes position, profit/loss is calculated
+      ↓
+[11] Funds are sent back (via CCIP) and can be withdrawn

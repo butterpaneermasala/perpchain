@@ -1,0 +1,54 @@
+body {
+  background: #f7f7f7;
+  color: #232946;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+button {
+  font-family: inherit;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 #eebbc3;
+  transition: background 0.1s, color 0.1s;
+}
+
+button:active {
+  box-shadow: 2px 2px 0 #eebbc3;
+}
+
+input {
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 2px solid #eebbc3;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.sidebar {
+  background: #232946;
+  color: #fff;
+  min-height: 100vh;
+  width: 220px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  z-index: 2;
+}
+
+.sidebar-guide {
+  background: #eebbc3;
+  color: #232946;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 32px;
+}
