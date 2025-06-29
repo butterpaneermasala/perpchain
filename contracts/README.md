@@ -1,292 +1,106 @@
-Execution Flow: Real-Life Example
-Scenario: Alice deposits $10,000 USDC, opens a 10x long BTC position, and gets liquidated when BTC drops 15%.
+Here's a step-by-step guide to deploy your contracts using Foundry, including all terminal commands and configurations:
 
-Step-by-Step Flow
-Deposit Collateral:
-
-Contract: CrossChainVault
-
-Function: depositCollateral(USDC, 10_000)
-
-Action: Alice’s USDC is stored in the vault.
-
-Open Position:
-
-Contract: PerpetualTrading
-
-Function: openPosition("BTC/USD", LONG, 100_000, 10, USDC)
-
-Borrows $90,000 from CrossChainLendingPool.
-
-Records entry price: $50,000/BTC.
-
-Price Update:
-
-Contract: DataStreamOracle
-
-Function: updatePrice("BTC/USD", 42_500)
-
-Triggers TWAP update and circuit breaker checks.
-
-Liquidation:
-
-Contract: LiquidationEngine (via Chainlink Automation)
-
-Function: performUpkeep()
-
-Detects health ratio < 80% (using calculateHealthFactor).
-
-Calls PerpetualTrading.liquidatePosition(positionId).
-
-Repay Debt:
-
-Contract: PerpetualTrading
-
-Function: liquidatePosition(positionId)
-
-Repays $90,000 + interest to CrossChainLendingPool.
-
-Charges 5% penalty to Alice’s collateral.
-
-
-
-### Detailed Configuration Guide for Deploying Cross-Chain Perpetual Trading Contracts with CCIP on Testnets
-
-This guide explains, with code references, all the configuration changes you must make before deploying your contracts (such as PerpetualTrading, CrossChainVault, LendingPool, CCIPReceiver, etc.) for testing with Chainlink CCIP routing and cross-chain functionality. It also lists recommended testnets and how to set up your deployment.
-
-### **1. Choose Your Testnets**
-
-For robust cross-chain and CCIP testing, select from these widely supported testnets:
-
-| Testnet            | Chain Selector (example) | Supported by CCIP? | Notes                                 |
-|--------------------|-------------------------|--------------------|---------------------------------------|
-| Ethereum Sepolia   | 16015286601757825753    | Yes                | Most common for EVM/CCIP              |
-| Avalanche Fuji     | 14767482510784806043    | Yes                | Fast, ideal for cross-chain with Sepolia|
-| BNB Chain Testnet  | 13264668187771770619    | Yes                | Popular for cross-chain                |
-| Base Sepolia       | 10344971235874465080    | Yes                | L2, supported by CCIP                  |
-| Arbitrum Sepolia   | 3478487238524512106     | Yes                | L2, supported by CCIP                  |
-
-**Reference:**  
-See the full list and chain selectors at Chainlink’s [CCIP Directory][1][2].
-
-### **2. Update Contract Addresses and Parameters**
-
-#### **A. Constructor Arguments**
-
-When deploying contracts like `PerpetualTrading`, `CrossChainVault`, `LendingPool`, and `CCIPReceiver`, you must provide the addresses of their dependencies (oracle, vault, lending pool, router, etc.) as constructor arguments.
-
-**Example (PerpetualTrading.sol):**
-```solidity
-constructor(
-    address _feeRecipient,
-    address _oracle,
-    address _lendingpool
-) Ownable(msg.sender) {
-    feeRecipient = _feeRecipient;
-    liquidationBot = msg.sender;
-    lendingPool = CrossChainLendingPool(_lendingpool);
-    oracle = IDataStreamOracle(_oracle);
-}
-```
-**What to change:**  
-- `_feeRecipient`: Your own testnet wallet or multisig.
-- `_oracle`: Address of your deployed DataStreamOracle on the testnet.
-- `_lendingpool`: Address of your deployed LendingPool on the testnet.
-
-#### **B. CCIP Router and Receiver**
-
-- **Router:** Each testnet has a different CCIP router address.  
-- **Receiver:** The address of your deployed CCIPReceiver contract.
-
-**Example (CrossChainVault.sol):**
-```solidity
-constructor(address _router) Ownable(msg.sender) {
-    require(_router != address(0), "Invalid router address");
-    router = IRouterClient(_router);
-}
-```
-**What to change:**  
-- `_router`: Use the router address for the chosen testnet from the [CCIP Directory][1][2].
-
-**Example (LendingPool.sol):**
-```solidity
-constructor(address _ccipRouter) Ownable(msg.sender) {
-    ccipRouter = IRouterClient(_ccipRouter);
-}
+### 1. **Environment Setup**
+Create a `.env` file in your project root with:
+```bash
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+PRIVATE_KEY=your_private_key_without_0x_prefix
+ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
-#### **C. Supported Tokens and Chain Selectors**
+### 2. **Install Dependencies**
+```bash
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 
-- Add supported tokens and supported chain selectors via admin functions after deployment.
-
-**Example (CrossChainVault.sol):**
-```solidity
-function addSupportedToken(address token) external onlyOwner {
-    require(token != address(0), "Invalid token address");
-    supportedTokens[token] = true;
-}
-
-function addSupportedChain(uint64 chainSelector) external onlyOwner {
-    require(chainSelector != 0, "Invalid chain selector");
-    supportedChains[chainSelector] = true;
-}
+# Install OpenZeppelin and Chainlink dependencies
+forge install openzeppelin/openzeppelin-contracts
+forge install smartcontractkit/chainlink
 ```
-**What to change:**  
-- Add the addresses of testnet ERC20 tokens you want to support.
-- Add the chain selectors of testnets you want to support cross-chain transfers with.
 
-#### **D. Chainlink Feed IDs**
-
-- When adding markets or collateral tokens, use the correct feed IDs for the testnet.
-- Feed IDs are typically the keccak256 hash of the feed symbol, or you can use the address of a deployed Chainlink price feed.
-
-**Example (PerpetualTrading.sol):**
-```solidity
-function addMarket(
-    bytes32 assetPair,
-    bytes32 feedId,
-    uint256 maxLeverage,
-    uint256 maintenanceMargin
-) external onlyOwner {
-    // Add market logic
-}
-
-function addSupportedToken(
-    address token,
-    bytes32 feedId
-) external onlyOwner {
-    // Add token logic
-}
+### 3. **Deployment Command**
+Run this command to deploy all contracts:
+```bash
+forge script script/DeployPerpetualTrading.s.sol:DeployPerpetualTrading \
+--rpc-url $SEPOLIA_RPC_URL \
+--broadcast \
+--verify \
+--etherscan-api-key $ETHERSCAN_API_KEY \
+-vvvv
 ```
-**What to change:**  
-- Use testnet feed IDs and addresses for each asset and collateral token.
 
-#### **E. LINK Token Address**
+### 4. **Post-Deployment Configuration**
+After deployment, run these commands to configure cross-chain settings (replace placeholders with actual addresses from deployment logs):
 
-- Set the LINK token address for paying CCIP fees on each testnet.
+```bash
+# Allow Arbitrum Sepolia as source chain
+cast send  \
+"setAllowedSourceChain(uint64,bool)" \
+3478487238524512106 true \
+--rpc-url $SEPOLIA_RPC_URL
 
-**Example (CCIPSender contract):**
-```solidity
-address link;
-constructor(address _link, address _router) {
-    link = _link;
-    router = _router;
-    LinkTokenInterface(link).approve(router, type(uint256).max);
-}
+# Allow Arbitrum's CCIPReceiver as sender
+cast send  \
+"setAllowedSender(address,bool)" \
+ true \
+--rpc-url $SEPOLIA_RPC_URL
+
+# Repeat for Arbitrum network (swap addresses)
+cast send  \
+"setAllowedSourceChain(uint64,bool)" \
+16015286601757825753 true \
+--rpc-url $ARB_SEPOLIA_RPC_URL
+
+cast send  \
+"setAllowedSender(address,bool)" \
+ true \
+--rpc-url $ARB_SEPOLIA_RPC_URL
 ```
-**What to change:**  
-- Use the LINK token address for your selected testnet (see [CCIP Directory][1][2]).
 
-#### **F. Permissions and Allowlists (CCIPReceiver.sol)**
+### 5. **Fund Contracts**
+Send testnet ETH/LINK to contracts for gas:
+```bash
+# Send ETH to CCIPReceiver for fees
+cast send  --value 0.1ether
 
-- Set allowed source chains and sender addresses for security.
-```solidity
-function setAllowedSourceChain(uint64 chainSelector, bool allowed) external onlyRole(ADMIN_ROLE) {
-    allowedSourceChains[chainSelector] = allowed;
-}
-
-function setAllowedSender(address sender, bool allowed) external onlyRole(ADMIN_ROLE) {
-    allowedSenders[sender] = allowed;
-}
+# Get testnet LINK from faucet and send to CCIPReceiver
+cast send  \
+"transfer(address,uint256)" \
+ \
+1000000000000000000  # 1 LINK
 ```
-**What to change:**  
-- Add the chain selectors and sender contract addresses you trust for cross-chain messages.
 
-#### **G. Circuit Breaker and Heartbeat (DataStreamOracle.sol)**
-
-- Set heartbeat and circuit breaker parameters for each feed to match testnet oracle update frequency and volatility.
-```solidity
-function addFeed(string memory feedSymbol, string memory symbol, uint8 decimals, uint256 heartbeat, uint256 deviationThreshold, address fallbackFeed) external onlyOwner {
-    // Add feed logic
-}
-function setCircuitBreakerParams(bytes32 feedId, uint256 maxDeviationBps, uint256 cooldownPeriod, bool isEnabled) external onlyOwner validFeed(feedId) {
-    // Set circuit breaker logic
-}
+### 6. **Automation Setup**
+Register for Chainlink Automation:
+```bash
+cast send  \
+"register()" --value 0.1ether
 ```
-**What to change:**  
-- Adjust heartbeat (in seconds) and deviation threshold (in bps) per feed.
 
-### **3. Example Configuration Workflow**
-
-**Step 1: Deploy Oracle**
-- Deploy `DataStreamOracle` on each testnet.
-- Add feeds for each asset/collateral using testnet price feed addresses.
-
-**Step 2: Deploy Vault, LendingPool, PerpetualTrading, CCIPReceiver**
-- Deploy `CrossChainVault` with the testnet router address.
-- Deploy `LendingPool` with the testnet router address.
-- Deploy `PerpetualTrading` with addresses of the vault, oracle, and lending pool.
-- Deploy `CCIPReceiver` with the router, vault, trading, and lending pool addresses.
-
-**Step 3: Configure Contracts**
-- Add supported tokens and chains in `CrossChainVault`.
-- Add supported tokens and markets in `PerpetualTrading`.
-- Set the CCIPReceiver address in `PerpetualTrading` and `LendingPool`.
-- Set allowed chains and senders in `CCIPReceiver`.
-
-**Step 4: Fund Contracts**
-- Send testnet LINK to your contracts for CCIP fees.
-- Fund your own testnet wallets with testnet tokens.
-
-### **4. Example: Adding a Market and Token on Sepolia**
-
-Suppose you want to support USDC as collateral and ETH/USD as a trading market on Sepolia.
-
-```solidity
-// Add USDC as supported collateral
-perpetualTrading.addSupportedToken(
-    0x...USDC_ADDRESS_ON_SEPOLIA, // USDC token address
-    keccak256(abi.encodePacked("USDC/USD")) // Feed ID for USDC/USD
-);
-
-// Add ETH/USD market
-perpetualTrading.addMarket(
-    keccak256(abi.encodePacked("ETH/USD")), // Asset pair
-    keccak256(abi.encodePacked("ETH/USD")), // Feed ID for ETH/USD
-    50, // Max leverage (e.g., 50x)
-    5000 // Maintenance margin (e.g., 5,000 bps = 5%)
-);
+### 7. **Verification (Alternative)**
+If Etherscan verification fails, verify manually:
+```bash
+forge verify-contract  \
+src/PerpetualTrading.sol:PerpetualTrading \
+--chain-id 11155111 \
+--verifier etherscan \
+--etherscan-api-key $ETHERSCAN_API_KEY
 ```
----
 
-### **5. Environment Variables and Deployment**
+### Key Configuration Notes:
+1. **Update Addresses**: Replace all `` placeholders with addresses from deployment logs
+2. **Chain Selectors**:
+   - Sepolia: `16015286601757825753`
+   - Arbitrum Sepolia: `3478487238524512106`
+3. **Testnet Tokens**:
+   - USDC: `0x07865c6E87B9F70255377e024ace6630C1Eaa37F`
+   - WETH: `0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9`
 
-Set environment variables for private keys and RPC URLs.  
-**Example .env:**
-```
-PRIVATE_KEY="your_testnet_private_key"
-ETHEREUM_SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/..."
-AVALANCHE_FUJI_RPC_URL="https://api.avax-test.network/ext/bc/C/rpc"
-```
-**Reference:**  
-See [How to use Chainlink CCIP][3].
+### Troubleshooting:
+- If RPC errors occur, retry with `--gas-estimate-multiplier 200`
+- For contract calls, add `--legacy` if on a non-EIP1559 chain
+- Top up deployer account with Sepolia ETH from [faucets](https://sepoliafaucet.com/)
 
-### **6. Testing Checklist**
-
-- Deploy all contracts to at least two testnets (e.g., Sepolia and Fuji).
-- Configure all addresses, feeds, tokens, and routers as above.
-- Test cross-chain deposits/withdrawals, position opening/closing, and liquidations.
-- Monitor contract events and logs for correct cross-chain message handling.
-
-## **Summary Table: What to Change Per Testnet**
-
-| Parameter                | Where to Set                    | How to Find Value                | Example (Sepolia)         |
-|--------------------------|----------------------------------|----------------------------------|---------------------------|
-| Oracle address           | PerpetualTrading, PositionManager| Deploy Oracle, use its address   | 0x...                     |
-| Lending pool address     | PerpetualTrading                 | Deploy LendingPool, use address  | 0x...                     |
-| Vault address            | LendingPool, CCIPReceiver        | Deploy Vault, use address        | 0x...                     |
-| CCIP Router address      | Vault, LendingPool, CCIPReceiver | CCIP Directory                   | 0x...                     |
-| LINK token address       | CCIPSender, for fees             | CCIP Directory                   | 0x...                     |
-| Supported tokens         | Vault, PerpetualTrading          | Testnet ERC20 addresses          | 0x...                     |
-| Feed IDs                 | Oracle, PerpetualTrading         | keccak256("SYMBOL/USD") or addr  | keccak256("ETH/USD")      |
-| Allowed chains/selectors | Vault, CCIPReceiver              | CCIP Directory                   | 16015286601757825753      |
-| Allowed senders          | CCIPReceiver                     | Your contract addresses          | 0x...                     |
-
-## **References**
-- [Chainlink CCIP Directory][1]
-- [How to use Chainlink CCIP][3]
-- [CCIP React Components Network Config Example][2]
-
-**In summary:**  
-Update all contract addresses, supported tokens, Chainlink feeds, CCIP router and receiver addresses, LINK token addresses, and permissions for each testnet you use. Use Sepolia, Avalanche Fuji, BNB Chain Testnet, Base Sepolia, or Arbitrum Sepolia for cross-chain CCIP testing, and configure each contract with the correct parameters as shown above for secure and effective deployment and testing.
+This sequence handles deployment, verification, cross-chain setup, and contract funding. All contracts are wired together with testnet parameters for immediate testing.
 
