@@ -9,27 +9,32 @@ import {PerpetualTrading} from "../src/PerpetuaTrading.sol";
 import {CrossChainReceiver} from "../src/CCIPReceiver.sol";
 import {LiquidationEngine} from "../src/LiquidationEngine.sol";
 import {PositionManager} from "../src/PositionManager.sol";
+import {MockERC20} from "contracts/lib/chainlink-brownie-contracts/contracts/src/v0.8/vendor/forge-std/src/mocks/MockERC20.sol"; // Add mock token
 
 contract DeployPerpetualTrading is Script {
-    // Chainlink CCIP Router Addresses
-    address constant SEPOLIA_CCIP_ROUTER =
-        0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59;
-    address constant MUMBAI_CCIP_ROUTER =
-        0x1035CabC275068e0F4b745A29CEDf38E13aF41b1;
+    // Local Anvil environment addresses
+    address constant ANVIL_CCIP_ROUTER =
+        0x5FbDB2315678afecb367f032d93F642f64180aa3; // Anvil's first default address
 
-    // Testnet token addresses (example)
-    address constant USDC_TESTNET = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
-    address constant WETH_TESTNET = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9;
+    // Mock token contracts
+    MockERC20 public usdc;
+    MockERC20 public weth;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. Deploy Core Contracts
+        // 1. Deploy mock tokens (USDC and WETH)
+        usdc = new MockERC20("USD Coin", "USDC", 6);
+        weth = new MockERC20("Wrapped Ether", "WETH", 18);
+
+        // 2. Deploy Core Contracts
         DataStreamOracle oracle = new DataStreamOracle();
-        CrossChainLendingPool lendingPool = new CrossChainLendingPool(SEPOLIA_CCIP_ROUTER);
-        CrossChainVault vault = new CrossChainVault(SEPOLIA_CCIP_ROUTER);
+        CrossChainLendingPool lendingPool = new CrossChainLendingPool(
+            ANVIL_CCIP_ROUTER
+        );
+        CrossChainVault vault = new CrossChainVault(ANVIL_CCIP_ROUTER);
 
         PerpetualTrading perpetual = new PerpetualTrading(
             deployer, // feeRecipient
@@ -38,7 +43,7 @@ contract DeployPerpetualTrading is Script {
         );
 
         CrossChainReceiver ccipReceiver = new CrossChainReceiver(
-            SEPOLIA_CCIP_ROUTER,
+            ANVIL_CCIP_ROUTER,
             address(vault),
             address(perpetual),
             address(lendingPool)
@@ -52,15 +57,14 @@ contract DeployPerpetualTrading is Script {
             deployer // feeRecipient
         );
 
-        // 2. Configure Contracts
-        // Set critical addresses
+        // 3. Configure Contracts
         lendingPool.setCCIPReceiver(address(ccipReceiver));
         lendingPool.setPerpetualTrading(address(perpetual));
 
         vault.setAuthorizedCaller(address(ccipReceiver), true);
-        vault.addSupportedToken(USDC_TESTNET);
-        vault.addSupportedToken(WETH_TESTNET);
-        vault.addSupportedChain(16015286601757825753); // Arbitrum Sepolia chain selector
+        vault.addSupportedToken(address(usdc));
+        vault.addSupportedToken(address(weth));
+        vault.addSupportedChain(1); // Local chain selector (dummy value)
 
         perpetual.setCCIPReceiver(address(ccipReceiver));
         perpetual.setLiquidationBot(address(liquidationEngine));
@@ -73,7 +77,7 @@ contract DeployPerpetualTrading is Script {
             address(vault)
         );
 
-        // 3. Configure Markets
+        // 4. Configure Markets
         // Add BTC/USD market
         bytes32 btcFeedId = keccak256(abi.encodePacked("BTC/USD"));
         perpetual.addMarket(btcFeedId, btcFeedId, 50, 5000); // maxLeverage=50, maintenanceMargin=5000
@@ -84,29 +88,50 @@ contract DeployPerpetualTrading is Script {
 
         // Add collateral tokens
         perpetual.addSupportedToken(
-            USDC_TESTNET,
+            address(usdc),
             keccak256(abi.encodePacked("USDC/USD"))
         );
         perpetual.addSupportedToken(
-            WETH_TESTNET,
+            address(weth),
             keccak256(abi.encodePacked("ETH/USD"))
         );
 
-        // 4. Configure Oracle
+        // 5. Configure Oracle with mock prices
         oracle.addFeed(
             "BTC/USD",
             "BTC/USD",
             8, // decimals
             300, // heartbeat (seconds)
             100, // deviation threshold (basis points)
-            0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 // BTC/USD Sepolia feed
+            address(0) // No aggregator needed for local
+        );
+        oracle.addFeed(
+            "ETH/USD",
+            "ETH/USD",
+            8, // decimals
+            300, // heartbeat
+            100, // deviation threshold
+            address(0)
         );
 
+        // Set initial prices
+        oracle.emergencyUpdatePrice(
+            btcFeedId,
+            60_000 * 10 ** 8,
+            block.timestamp
+        );
+        oracle.emergencyUpdatePrice(
+            ethFeedId,
+            3_000 * 10 ** 8,
+            block.timestamp
+        );
         oracle.setAuthorizedUpdater(deployer, true);
 
         vm.stopBroadcast();
 
         // Log deployed addresses
+        console2.log("USDC deployed at:", address(usdc));
+        console2.log("WETH deployed at:", address(weth));
         console2.log("DataStreamOracle deployed at:", address(oracle));
         console2.log("LendingPool deployed at:", address(lendingPool));
         console2.log("CrossChainVault deployed at:", address(vault));
